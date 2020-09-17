@@ -50,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
 
     static PlaybackService service;
 
+    static boolean inBackground = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -107,12 +109,6 @@ public class MainActivity extends AppCompatActivity {
             String input = intent.getStringExtra("Remote_Input");
             assert input != null;
             switch (input) {
-                case "D_RIGHT":
-                    actionRight(context);
-                    break;
-                case "D_LEFT":
-                    actionLeft(context);
-                    break;
                 case "BTN_PLAY":
                     service.play(curr_pos);
                     break;
@@ -124,6 +120,16 @@ public class MainActivity extends AppCompatActivity {
                     service.playPrev();
                     actionLeft(context);
                     break;
+            }
+            if(!inBackground){
+                switch (input){
+                    case "D_RIGHT":
+                        actionRight(context);
+                        break;
+                    case "D_LEFT":
+                        actionLeft(context);
+                        break;
+                }
             }
         }
     }
@@ -275,17 +281,13 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onPause() {
-        PackageManager pm = getPackageManager();
-        ComponentName componentName = new ComponentName(this, remoteReceiver.class);
-        pm.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+        inBackground = true;
         super.onPause();
     }
 
     @Override
     protected void onResume() {
-        PackageManager pm = getPackageManager();
-        ComponentName componentName = new ComponentName(this, remoteReceiver.class);
-        pm.setComponentEnabledSetting(componentName, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
+        inBackground = false;
         super.onResume();
     }
 }

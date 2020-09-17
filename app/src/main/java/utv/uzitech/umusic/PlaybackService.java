@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -23,8 +22,6 @@ class PlaybackService {
     ArrayList<JSONObject> allMusic;
     MediaPlayer mediaPlayer;
     int curr;
-    Runnable seekUpdate;
-    Handler seekHandler;
 
     ImageView curr_art;
     TextView curr_title, curr_artist, curr_album;
@@ -34,7 +31,7 @@ class PlaybackService {
 
     PlaybackService(Activity activity, ArrayList<JSONObject> allMusic, ImageView curr_art, TextView curr_title, TextView curr_artist, TextView curr_album, ImageButton play_pause, SeekBar seekBar) {
         this.activity = activity;
-        mediaPlayer = new MediaPlayer();
+        this.mediaPlayer = new MediaPlayer();
         this.allMusic = allMusic;
         this.curr_art = curr_art;
         this.curr_title = curr_title;
@@ -46,7 +43,7 @@ class PlaybackService {
         retriever = new MediaMetadataRetriever();
     }
 
-    void setMediaPlayer(int curr) {
+    void setMediaPlayer(final int curr) {
         try {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
                 ParcelFileDescriptor fileDescriptor = activity.getContentResolver().openFileDescriptor(Uri.fromFile(new File(allMusic.get(curr).getString("source"))), "r");
@@ -65,17 +62,14 @@ class PlaybackService {
         }
     }
 
-    void play(int curr) {
+    void play(final int curr) {
         if (!mediaPlayer.isPlaying()) {
             if (curr != this.curr) {
                 this.curr = curr;
                 setMediaPlayer(curr);
-                mediaPlayer.start();
-                play_pause.setImageResource(android.R.drawable.ic_media_pause);
-            } else {
-                mediaPlayer.start();
-                play_pause.setImageResource(android.R.drawable.ic_media_pause);
             }
+            play_pause.setImageResource(android.R.drawable.ic_media_pause);
+            mediaPlayer.start();
         } else {
             if (curr != this.curr) {
                 mediaPlayer.stop();
@@ -92,7 +86,7 @@ class PlaybackService {
     }
 
     void playNext() {
-        if (curr != allMusic.size()-1) {
+        if (curr != allMusic.size() - 1) {
             curr += 1;
             mediaPlayer.stop();
             mediaPlayer.reset();
@@ -124,9 +118,5 @@ class PlaybackService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    void destroy() {
-        mediaPlayer.stop();
     }
 }
