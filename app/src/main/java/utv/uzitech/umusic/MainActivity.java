@@ -1,10 +1,11 @@
 package utv.uzitech.umusic;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -44,13 +45,15 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<String> allAlbum, allArtist;
     static ArrayList<CardView> allCards;
 
-    static HorizontalScrollView allTracks_view;
+    HorizontalScrollView allTracks_view;
 
     static int curr_pos = 0;
 
-    static PlaybackService service;
+    PlaybackService service;
 
     static boolean inBackground = false;
+
+    BroadcastReceiver receiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +79,37 @@ public class MainActivity extends AppCompatActivity {
         ImageButton playPrev = findViewById(R.id.play_prev);
         ImageButton playNext = findViewById(R.id.play_next);
 
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String input = intent.getStringExtra("Remote_Input");
+                assert input != null;
+                switch (input) {
+                    case "BTN_PLAY":
+                        service.play(curr_pos);
+                        break;
+                    case "BTN_NEXT":
+                        service.playNext();
+                        actionRight(context);
+                        break;
+                    case "BTN_PREV":
+                        service.playPrev();
+                        actionLeft(context);
+                        break;
+                }
+                if(!inBackground){
+                    switch (input){
+                        case "D_RIGHT":
+                            actionRight(context);
+                            break;
+                        case "D_LEFT":
+                            actionLeft(context);
+                            break;
+                    }
+                }
+            }
+        };
+
         playPrev.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -100,41 +134,11 @@ public class MainActivity extends AppCompatActivity {
         });
 
         highlightCard(getApplicationContext());
+
+        this.registerReceiver(receiver, new IntentFilter("utv.uzitech.remote_input"));
     }
 
-    public static class remoteReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String input = intent.getStringExtra("Remote_Input");
-            assert input != null;
-            switch (input) {
-                case "BTN_PLAY":
-                    service.play(curr_pos);
-                    break;
-                case "BTN_NEXT":
-                    service.playNext();
-                    actionRight(context);
-                    break;
-                case "BTN_PREV":
-                    service.playPrev();
-                    actionLeft(context);
-                    break;
-            }
-            if(!inBackground){
-                switch (input){
-                    case "D_RIGHT":
-                        actionRight(context);
-                        break;
-                    case "D_LEFT":
-                        actionLeft(context);
-                        break;
-                }
-            }
-        }
-    }
-
-    static void actionRight(Context context) {
+    void actionRight(Context context) {
         if (curr_pos != allMusic.size() - 1) {
             curr_pos += 1;
         } else {
@@ -143,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
         highlightCard(context);
     }
 
-    static void actionLeft(Context context) {
+    void actionLeft(Context context) {
         if (curr_pos != 0) {
             curr_pos -= 1;
         } else {
@@ -152,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
         highlightCard(context);
     }
 
-    private static void highlightCard(Context context) {
+    private void highlightCard(Context context) {
         allTracks_view.smoothScrollTo(allCards.get(curr_pos).getLeft(), 0);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             for (int i = 0; i < allCards.size(); i++) {
@@ -180,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
 
     private CardView createCard(JSONObject object, float density, final int pos) {
         LayoutInflater inflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        CardView layout = (CardView) inflater.inflate(R.layout.track_card, null);
+        @SuppressLint("InflateParams") CardView layout = (CardView) inflater.inflate(R.layout.track_card, null);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
 
         ImageView artwork = layout.findViewById(R.id.track_art);
