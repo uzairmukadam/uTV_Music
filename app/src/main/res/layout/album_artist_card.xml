@@ -11,15 +11,9 @@
         android:orientation="vertical"
         android:padding="8dp">
 
-        <ImageView
-            android:id="@+id/track_art"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:src="@drawable/art_placeholder" />
-
         <TextView
             android:id="@+id/track_title"
-            android:layout_width="match_parent"
+            android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:gravity="center_horizontal"
