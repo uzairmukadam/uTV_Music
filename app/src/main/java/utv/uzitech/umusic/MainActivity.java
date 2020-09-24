@@ -1,17 +1,18 @@
 package utv.uzitech.umusic;
 
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
@@ -19,22 +20,17 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.bumptech.glide.request.target.SimpleTarget;
-import com.bumptech.glide.request.transition.Transition;
 
 import org.json.JSONObject;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileDescriptor;
-import java.io.InputStream;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -46,24 +42,37 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<ArrayList<Integer>> albumTracks, artistTracks;
     ArrayList<Integer> favTracks;
 
-    ImageView tracks_list;
-    LinearLayout music_list;
+    LinearLayout allTracks_list;
 
     DatabaseHelper database;
+
+    BroadcastReceiver receiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        database = new DatabaseHelper(getApplicationContext());
+        allTracks_list = findViewById(R.id.tracks_parent);
 
-        tracks_list = findViewById(R.id.bg_art);
-        music_list = findViewById(R.id.music_list);
+        database = new DatabaseHelper(getApplicationContext());
 
         getAllFiles();
 
         makeList();
+
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String input = intent.getStringExtra("Remote_Input");
+                assert input != null;
+                if(input.equals("BTN_BACK")){
+                    MainActivity.super.onBackPressed();
+                }
+            }
+        };
+
+        registerReceiver(receiver, new IntentFilter("utv.uzitech.remote_input"));
     }
 
     void getAllFiles(){
@@ -134,19 +143,37 @@ public class MainActivity extends AppCompatActivity {
 
     void makeList(){
         Log.d(TAG, "List_Start");
-        for (int i = 0; i < allMusic.size(); i++) {
-            final LinearLayout view = createCard(allMusic.get(i), i);
-            music_list.addView(view);
+        float density = getResources().getDisplayMetrics().density;
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        int i=0;
+        boolean end = false;
+        while(!end){
+            LinearLayout temp = new LinearLayout(this);
+            temp.setOrientation(LinearLayout.HORIZONTAL);
+            for(int j=0; j<4; j++){
+                if(i<allMusic.size()){
+                    final CardView view = createCard(allMusic.get(i), i, density);
+                    temp.addView(view);
+                    i++;
+                }else {
+                    end = true;
+                    break;
+                }
+            }
+            temp.setGravity(Gravity.CENTER);
+            temp.setLayoutParams(params);
+            allTracks_list.addView(temp);
         }
         Log.d(TAG, "List_Done");
     }
 
-    private LinearLayout createCard(final JSONObject object, final int i) {
+    private CardView createCard(final JSONObject object, final int i, float density) {
         LayoutInflater inflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        @SuppressLint("InflateParams") LinearLayout layout = (LinearLayout) inflater.inflate(R.layout.track_list_layout, null);
+        @SuppressLint("InflateParams") CardView layout = (CardView) inflater.inflate(R.layout.track_card, null);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 
-        TextView title = layout.findViewById(R.id.track_name);
-        ImageView art = layout.findViewById(R.id.track_art);
+        TextView title = layout.findViewById(R.id.track_title);
+        ImageView art = layout.findViewById(R.id.track_artwork);
         try {
             title.setText(object.getString("title"));
             Glide.with(getApplicationContext()).load(getMetadata(object.getString("source")).getEmbeddedPicture()).
@@ -159,38 +186,19 @@ public class MainActivity extends AppCompatActivity {
         layout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //Toast.makeText(getApplicationContext(), String.valueOf(i), Toast.LENGTH_SHORT).show();
                 try {
-                    Glide.with(getApplicationContext()).load(getMetadata(object.getString("source")).getEmbeddedPicture()).into(tracks_list);
+                    Toast.makeText(getApplicationContext(), object.getString("title")+i, Toast.LENGTH_SHORT).show();
                 }catch (Exception e){
                     e.printStackTrace();
                 }
             }
         });
 
-        return layout;
-    }
+        params.setMargins((int) density * 8, (int) density * 8, (int) density * 8, (int) density * 8);
+        layout.setLayoutParams(params);
+        layout.setCardBackgroundColor(getResources().getColor(R.color.darkBackground));
 
-    private Bitmap getBitmap(String path) {
-        MediaMetadataRetriever metadataRetriever = new MediaMetadataRetriever();
-        Bitmap bitmap = null;
-        try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-                ParcelFileDescriptor fileDescriptor = getApplicationContext().getContentResolver().openFileDescriptor(Uri.fromFile(new File(path)), "r");
-                assert fileDescriptor != null;
-                FileDescriptor fileDescriptor1 = fileDescriptor.getFileDescriptor();
-                metadataRetriever.setDataSource(fileDescriptor1);
-            } else {
-                metadataRetriever.setDataSource(path);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        if (metadataRetriever.getEmbeddedPicture() != null) {
-            InputStream inputStream = new ByteArrayInputStream(metadataRetriever.getEmbeddedPicture());
-            bitmap = BitmapFactory.decodeStream(inputStream);
-        }
-        return bitmap;
+        return layout;
     }
 
     private MediaMetadataRetriever getMetadata(String path) {
@@ -208,5 +216,17 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return metadataRetriever;
+    }
+
+    @Override
+    protected void onPause() {
+        unregisterReceiver(receiver);
+        super.onPause();
+    }
+
+    @Override
+    protected void onPostResume() {
+        registerReceiver(receiver, new IntentFilter("utv.uzitech.remote_input"));
+        super.onPostResume();
     }
 }
