@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
@@ -18,6 +19,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,14 +42,21 @@ public class MainActivity extends AppCompatActivity {
 
     ArrayList<JSONObject> allMusic;
     ArrayList<CardView> allCards;
+    //ArrayList<Integer> musicQueue;
     int[] tracks_tab;
 
     LinearLayout allTracks_list;
     ScrollView allTracks_scroll;
 
+    ImageView curr_artwork;
+    TextView curr_title, curr_artist, curr_album;
+    SeekBar seekbar;
+
     BroadcastReceiver receiver, mediaplayback;
 
-    int track = 0;
+    MediaPlayer player;
+
+    int track = 0, now_playing = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,11 +66,19 @@ public class MainActivity extends AppCompatActivity {
         allTracks_list = findViewById(R.id.tracks_parent);
         allTracks_scroll = findViewById(R.id.tracks_scroll);
 
+        curr_artwork = findViewById(R.id.curr_artwork);
+        curr_title = findViewById(R.id.curr_title);
+        curr_artist = findViewById(R.id.curr_artist);
+        curr_album = findViewById(R.id.curr_album);
+        seekbar = findViewById(R.id.curr_seekbar);
+
         getAllFiles();
 
         loadTracksTab();
 
         highlightCard();
+
+        player = new MediaPlayer();
 
         receiver = new BroadcastReceiver() {
             @Override
@@ -74,33 +91,36 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case "D_DOWN":
                         track += 4;
-                        if(track>allMusic.size()-1){
-                            if(track>allMusic.size()+tracks_tab[1]-1){
+                        if (track > allMusic.size() - 1) {
+                            if (track > allMusic.size() + tracks_tab[1] - 1) {
                                 track = 0;
-                            }else {
-                                track = allMusic.size()-1;
+                            } else {
+                                track = allMusic.size() - 1;
                             }
                         }
                         break;
                     case "D_UP":
                         track -= 4;
-                        if(track<0){
-                            track = allMusic.size()-1;
+                        if (track < 0) {
+                            track = allMusic.size() - 1;
                         }
                         break;
                     case "D_RIGHT":
-                        if(track!=allMusic.size()-1){
+                        if (track != allMusic.size() - 1) {
                             track += 1;
-                        }else {
+                        } else {
                             track = 0;
                         }
                         break;
                     case "D_LEFT":
-                        if(track!=0){
+                        if (track != 0) {
                             track -= 1;
-                        }else {
-                            track = allMusic.size()-1;
+                        } else {
+                            track = allMusic.size() - 1;
                         }
+                        break;
+                    case "D_ENTER":
+                        Play(track);
                         break;
                 }
                 highlightCard();
@@ -112,8 +132,16 @@ public class MainActivity extends AppCompatActivity {
             public void onReceive(Context context, Intent intent) {
                 String input = intent.getStringExtra("Remote_Input");
                 assert input != null;
-                if(input.equals("BTN_PLAY") || input.equals("BTN_PREV") || input.equals("BTN_NEXT")) {
-                    Toast.makeText(getApplicationContext(), input, Toast.LENGTH_SHORT).show();
+                switch (input) {
+                    case "BTN_PLAY":
+                        Play(now_playing);
+                        break;
+                    case "BTN_PREV":
+                        Prev();
+                        break;
+                    case "BTN_NEXT":
+                        Next();
+                        break;
                 }
             }
         };
@@ -246,6 +274,82 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 allCards.get(i).setCardBackgroundColor(getResources().getColor(R.color.darkBackground));
             }
+        }
+    }
+
+    void cleanHiglight() {
+        for (int i = 0; i < allCards.size(); i++) {
+            allCards.get(i).setCardBackgroundColor(getResources().getColor(R.color.darkBackground));
+        }
+    }
+
+    private void setSource(int i) {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
+                ParcelFileDescriptor fileDescriptor = getApplicationContext().getContentResolver().openFileDescriptor(Uri.fromFile(new File(allMusic.get(i).getString("source"))), "r");
+                assert fileDescriptor != null;
+                FileDescriptor fileDescriptor1 = fileDescriptor.getFileDescriptor();
+                player.setDataSource(fileDescriptor1);
+            } else {
+                player.setDataSource(allMusic.get(i).getString("source"));
+            }
+            player.prepare();
+            seekbar.setMax(player.getDuration());
+            setNowPlaying(i);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void Play(int pos) {
+        if (!player.isPlaying()) {
+            if (pos != now_playing) {
+                now_playing = pos;
+                setSource(pos);
+            }
+            player.start();
+        } else {
+            if (pos != now_playing) {
+                player.stop();
+                player.reset();
+                now_playing = pos;
+                setSource(pos);
+                player.start();
+            } else {
+                player.pause();
+            }
+        }
+    }
+
+    private void Next() {
+        if (now_playing != allMusic.size() - 1) {
+            Play(now_playing + 1);
+        } else {
+            //if loop
+            Play(0);
+        }
+        cleanHiglight();
+    }
+
+    private void Prev() {
+        if (now_playing != 0) {
+            Play(now_playing - 1);
+        } else {
+            //if loop
+            Play(allMusic.size() - 1);
+        }
+        cleanHiglight();
+    }
+
+    private void setNowPlaying(int pos) {
+        try {
+            curr_title.setText(allMusic.get(pos).getString("title"));
+            curr_artist.setText(allMusic.get(pos).getString("artist"));
+            curr_album.setText(allMusic.get(pos).getString("album"));
+            Glide.with(getApplicationContext()).load(getMetadata(allMusic.get(pos).getString("source")).getEmbeddedPicture()).
+                    placeholder(ContextCompat.getDrawable(getApplicationContext(), R.drawable.art_placeholder)).into(curr_artwork);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
