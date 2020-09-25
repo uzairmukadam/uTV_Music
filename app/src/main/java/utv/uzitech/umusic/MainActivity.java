@@ -17,6 +17,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,15 +39,15 @@ public class MainActivity extends AppCompatActivity {
     public static final String TAG = "MainActivity";
 
     ArrayList<JSONObject> allMusic;
-    ArrayList<String> allAlbum, allArtist;
-    ArrayList<ArrayList<Integer>> albumTracks, artistTracks;
-    ArrayList<Integer> favTracks;
+    ArrayList<CardView> allCards;
+    int[] tracks_tab;
 
     LinearLayout allTracks_list;
+    ScrollView allTracks_scroll;
 
-    DatabaseHelper database;
+    BroadcastReceiver receiver, mediaplayback;
 
-    BroadcastReceiver receiver;
+    int track = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,42 +55,85 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         allTracks_list = findViewById(R.id.tracks_parent);
-
-        database = new DatabaseHelper(getApplicationContext());
+        allTracks_scroll = findViewById(R.id.tracks_scroll);
 
         getAllFiles();
 
-        makeList();
+        loadTracksTab();
+
+        highlightCard();
 
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String input = intent.getStringExtra("Remote_Input");
                 assert input != null;
-                if(input.equals("BTN_BACK")){
-                    MainActivity.super.onBackPressed();
+                switch (input) {
+                    case "BTN_BACK":
+                        MainActivity.super.onBackPressed();
+                        break;
+                    case "D_DOWN":
+                        track += 4;
+                        if(track>allMusic.size()-1){
+                            if(track>allMusic.size()+tracks_tab[1]-1){
+                                track = 0;
+                            }else {
+                                track = allMusic.size()-1;
+                            }
+                        }
+                        break;
+                    case "D_UP":
+                        track -= 4;
+                        if(track<0){
+                            track = allMusic.size()-1;
+                        }
+                        break;
+                    case "D_RIGHT":
+                        if(track!=allMusic.size()-1){
+                            track += 1;
+                        }else {
+                            track = 0;
+                        }
+                        break;
+                    case "D_LEFT":
+                        if(track!=0){
+                            track -= 1;
+                        }else {
+                            track = allMusic.size()-1;
+                        }
+                        break;
+                }
+                highlightCard();
+            }
+        };
+
+        mediaplayback = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String input = intent.getStringExtra("Remote_Input");
+                assert input != null;
+                if(input.equals("BTN_PLAY") || input.equals("BTN_PREV") || input.equals("BTN_NEXT")) {
+                    Toast.makeText(getApplicationContext(), input, Toast.LENGTH_SHORT).show();
                 }
             }
         };
 
         registerReceiver(receiver, new IntentFilter("utv.uzitech.remote_input"));
+        registerReceiver(mediaplayback, new IntentFilter("utv.uzitech.remote_input"));
     }
 
-    void getAllFiles(){
+    private void loadTracksTab() {
+        tracks_tab = new int[2];
+        makeAllList();
+    }
+
+    void getAllFiles() {
         allMusic = new ArrayList<>();
-        allAlbum = new ArrayList<>();
-        allArtist = new ArrayList<>();
-        albumTracks = new ArrayList<>();
-        artistTracks = new ArrayList<>();
-        favTracks = new ArrayList<>();
         String sortOrder = MediaStore.MediaColumns.TITLE;
 
         Cursor cursor = getApplicationContext().getContentResolver().
                 query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, null, null, null, sortOrder);
 
-        ArrayList<String> allFavs = database.getAllFav();
-
-        int i=0;
         Log.d(TAG, "Start_getRaw"); //
         assert cursor != null;
         while (cursor.moveToNext()) {
@@ -97,72 +141,47 @@ public class MainActivity extends AppCompatActivity {
                 JSONObject object = new JSONObject();
                 object.put("title", cursor.getString(cursor.getColumnIndex("title")));
                 object.put("album", cursor.getString(cursor.getColumnIndex("album")));
-                if (!allAlbum.contains(object.getString("album"))) {
-                    allAlbum.add(object.getString("album"));
-                    ArrayList<Integer> temp = new ArrayList<>();
-                    temp.add(i);
-                    albumTracks.add(temp);
-                }else {
-                    int index = allAlbum.indexOf(object.getString("album"));
-                    ArrayList<Integer> temp = albumTracks.get(index);
-                    temp.add(i);
-                    albumTracks.set(index, temp);
-                }
                 object.put("artist", cursor.getString(cursor.getColumnIndex("artist")));
-                if (!allArtist.contains(object.getString("artist"))) {
-                    allArtist.add(object.getString("artist"));
-                    ArrayList<Integer> temp = new ArrayList<>();
-                    temp.add(i);
-                    artistTracks.add(temp);
-                }else {
-                    int index = allArtist.indexOf(object.getString("artist"));
-                    ArrayList<Integer> temp = artistTracks.get(index);
-                    temp.add(i);
-                    artistTracks.set(index, temp);
-                }
                 object.put("duration", cursor.getInt(cursor.getColumnIndex("duration")));
                 object.put("source", cursor.getString(cursor.getColumnIndex("_data")));
-                if(allFavs.contains(object.getString("source"))){
-                    allFavs.remove(object.getString("source"));
-                    favTracks.add(i);
-                }
                 allMusic.add(object);
-                i++;
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         Log.d(TAG, "End_getRaw"); //
 
-        for(String path: allFavs){
-            database.removeFav(path);
-        }
-
         cursor.close();
     }
 
-    void makeList(){
+    void makeAllList() {
+        allCards = new ArrayList<>();
         Log.d(TAG, "List_Start");
         float density = getResources().getDisplayMetrics().density;
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-        int i=0;
+        int i = 0;
         boolean end = false;
-        while(!end){
+        while (!end) {
             LinearLayout temp = new LinearLayout(this);
             temp.setOrientation(LinearLayout.HORIZONTAL);
-            for(int j=0; j<4; j++){
-                if(i<allMusic.size()){
+            temp.setGravity(Gravity.CENTER);
+            for (int j = 0; j < 4; j++) {
+                if (i < allMusic.size()) {
                     final CardView view = createCard(allMusic.get(i), i, density);
                     temp.addView(view);
+                    allCards.add(view);
+                    tracks_tab[1] = temp.getChildCount();
                     i++;
-                }else {
+                } else {
+                    temp.setGravity(Gravity.START);
                     end = true;
+                    tracks_tab[1] = temp.getChildCount();
                     break;
                 }
             }
-            temp.setGravity(Gravity.CENTER);
             temp.setLayoutParams(params);
             allTracks_list.addView(temp);
+            tracks_tab[0] += 1;
         }
         Log.d(TAG, "List_Done");
     }
@@ -179,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
             Glide.with(getApplicationContext()).load(getMetadata(object.getString("source")).getEmbeddedPicture()).
                     apply(new RequestOptions().override(500, 500)).
                     placeholder(ContextCompat.getDrawable(getApplicationContext(), R.drawable.art_placeholder)).into(art);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -187,8 +206,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 try {
-                    Toast.makeText(getApplicationContext(), object.getString("title")+i, Toast.LENGTH_SHORT).show();
-                }catch (Exception e){
+                    Toast.makeText(getApplicationContext(), object.getString("title") + i, Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -216,6 +235,18 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return metadataRetriever;
+    }
+
+    void highlightCard() {
+        int pos = track;
+        for (int i = 0; i < allCards.size(); i++) {
+            if (i == pos) {
+                allCards.get(i).setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
+                allTracks_scroll.smoothScrollTo(0, ((View) allCards.get(i).getParent()).getTop());
+            } else {
+                allCards.get(i).setCardBackgroundColor(getResources().getColor(R.color.darkBackground));
+            }
+        }
     }
 
     @Override

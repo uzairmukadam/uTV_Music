@@ -21,49 +21,24 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
+        <TextView
+            android:layout_gravity="center_horizontal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/tab_back"
-            android:gravity="center_horizontal"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/tab_selected"
-                android:padding="8dp"
-                android:text="Tracks"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:text="Albums"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:text="Artists"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:padding="8dp"
-                android:text="Favourites"
-                android:textStyle="bold" />
-        </LinearLayout>
+            android:background="@drawable/tab_selected"
+            android:textColor="@android:color/white"
+            android:layout_margin="8dp"
+            android:padding="8dp"
+            android:text="Tracks"
+            android:textStyle="bold" />
 
         <FrameLayout
+            android:id="@+id/tracks_fragment"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <include layout="@layout/tracks_tab_fragment"/>
+            android:layout_height="match_parent"
+            android:visibility="visible">
+
+            <include layout="@layout/tracks_tab_fragment" />
         </FrameLayout>
 
     </LinearLayout>
