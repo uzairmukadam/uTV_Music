@@ -4,15 +4,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+    android:orientation="horizontal">
 
     <include
+        android:id="@+id/now_playing_panel"
         layout="@layout/now_playing_column"
         android:layout_width="164dp"
         android:layout_height="match_parent" />
 
     <LinearLayout
-        android:id="@+id/music_list_column"
+        android:id="@+id/all_tracks_panel"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
@@ -42,5 +44,13 @@
         </FrameLayout>
 
     </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/full_screen_playback"
+        android:layout_width="match_parent"
+        android:visibility="gone"
+        android:layout_height="match_parent">
+            <include layout="@layout/now_playing_full"/>
+    </FrameLayout>
 
 </LinearLayout>
