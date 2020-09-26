@@ -18,13 +18,11 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
@@ -49,12 +47,8 @@ public class MainActivity extends AppCompatActivity {
     int[] tracks_tab;
 
     FrameLayout fullScreen;
-    LinearLayout allTracks_list;
-    ScrollView allTracks_scroll;
 
-    ImageButton play_pause, f_play_pause;
-
-    ImageView curr_artwork, full_artwork;
+    ImageView curr_artwork, full_artwork, play_pause, f_play_pause, shuffle_toggle;
     TextView curr_title, curr_artist, curr_album, full_title, full_details, full_curr, full_duration;
     SeekBar seekbar, f_seekbar;
 
@@ -64,34 +58,30 @@ public class MainActivity extends AppCompatActivity {
 
     int track = 0, now_playing = -1;
 
-    Runnable runnable;
-
-    boolean loop = true, shuffle = false;
+    boolean shuffle = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        allTracks_list = findViewById(R.id.tracks_parent);
-        allTracks_scroll = findViewById(R.id.tracks_scroll);
-
         fullScreen = findViewById(R.id.full_screen_playback);
 
+        play_pause = findViewById(R.id.play_pause);
         curr_artwork = findViewById(R.id.curr_artwork);
         curr_title = findViewById(R.id.curr_title);
         curr_artist = findViewById(R.id.curr_artist);
         curr_album = findViewById(R.id.curr_album);
         seekbar = findViewById(R.id.curr_seekbar);
-        play_pause = findViewById(R.id.play_pause);
 
+        f_play_pause = findViewById(R.id.full_play_pause);
         full_artwork = findViewById(R.id.full_artwork);
         full_title = findViewById(R.id.full_title);
         full_details = findViewById(R.id.full_details);
         full_curr = findViewById(R.id.full_curr_time);
         full_duration = findViewById(R.id.full_duration);
         f_seekbar = findViewById(R.id.full_seekbar);
-        f_play_pause = findViewById(R.id.full_play_pause);
+        shuffle_toggle = findViewById(R.id.shuffle_view);
 
         getAllFiles();
 
@@ -104,12 +94,10 @@ public class MainActivity extends AppCompatActivity {
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-                if (loop) {
-                    if (shuffle) {
-                        Play(new Random().nextInt(allMusic.size()));
-                    } else {
-                        Next();
-                    }
+                if (shuffle) {
+                    Play(new Random().nextInt(allMusic.size()));
+                } else {
+                    Next();
                 }
             }
         });
@@ -138,11 +126,7 @@ public class MainActivity extends AppCompatActivity {
                         if (fullScreen.getVisibility() == View.GONE) {
                             track += 4;
                             if (track > allMusic.size() - 1) {
-                                if (track > allMusic.size() + tracks_tab[1] - 1) {
-                                    track = 0;
-                                } else {
-                                    track = allMusic.size() - 1;
-                                }
+                                track = track % 4;
                             }
                         }
                         break;
@@ -152,6 +136,9 @@ public class MainActivity extends AppCompatActivity {
                             if (track < 0) {
                                 track = allMusic.size() - 1;
                             }
+                        }else {
+                            shuffle = !shuffle;
+                            setShuffleView();
                         }
                         break;
                     case "D_RIGHT":
@@ -161,6 +148,9 @@ public class MainActivity extends AppCompatActivity {
                             } else {
                                 track = 0;
                             }
+                        } else {
+                            int seek = player.getCurrentPosition() + 10000;
+                            player.seekTo(Math.min(seek, player.getDuration()));
                         }
                         break;
                     case "D_LEFT":
@@ -170,6 +160,9 @@ public class MainActivity extends AppCompatActivity {
                             } else {
                                 track = allMusic.size() - 1;
                             }
+                        } else {
+                            int seek = player.getCurrentPosition() - 10000;
+                            player.seekTo(Math.max(seek, 0));
                         }
                         break;
                     case "D_ENTER":
@@ -178,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                 }
+                Log.d(TAG, String.valueOf(track));
                 highlightCard();
             }
         };
@@ -201,10 +195,17 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-        new Thread(runnable);
-
         registerReceiver(receiver, new IntentFilter("utv.uzitech.remote_input"));
         registerReceiver(mediaplayback, new IntentFilter("utv.uzitech.remote_input"));
+    }
+
+    private void setShuffleView() {
+        if(shuffle){
+            shuffle_toggle.setBackgroundResource(R.drawable.shuffle_toggle);
+        } else {
+
+            shuffle_toggle.setBackgroundResource(0);
+        }
     }
 
     private void loadTracksTab() {
@@ -227,7 +228,6 @@ public class MainActivity extends AppCompatActivity {
                 object.put("title", cursor.getString(cursor.getColumnIndex("title")));
                 object.put("album", cursor.getString(cursor.getColumnIndex("album")));
                 object.put("artist", cursor.getString(cursor.getColumnIndex("artist")));
-                object.put("duration", cursor.getInt(cursor.getColumnIndex("duration")));
                 object.put("source", cursor.getString(cursor.getColumnIndex("_data")));
                 allMusic.add(object);
             } catch (Exception e) {
@@ -240,10 +240,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void makeAllList() {
+        LinearLayout allTracks_list = findViewById(R.id.tracks_parent);
         allCards = new ArrayList<>();
         Log.d(TAG, "List_Start");
         float density = getResources().getDisplayMetrics().density;
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
         int i = 0;
         boolean end = false;
         while (!end) {
@@ -252,10 +252,9 @@ public class MainActivity extends AppCompatActivity {
             temp.setGravity(Gravity.CENTER);
             for (int j = 0; j < 4; j++) {
                 if (i < allMusic.size()) {
-                    final CardView view = createCard(allMusic.get(i), i, density);
+                    final CardView view = createCard(allMusic.get(i), density);
                     temp.addView(view);
                     allCards.add(view);
-                    tracks_tab[1] = temp.getChildCount();
                     i++;
                 } else {
                     temp.setGravity(Gravity.START);
@@ -264,14 +263,13 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 }
             }
-            temp.setLayoutParams(params);
             allTracks_list.addView(temp);
             tracks_tab[0] += 1;
         }
         Log.d(TAG, "List_Done");
     }
 
-    private CardView createCard(final JSONObject object, final int i, float density) {
+    private CardView createCard(final JSONObject object, float density) {
         LayoutInflater inflater = (LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         @SuppressLint("InflateParams") CardView layout = (CardView) inflater.inflate(R.layout.track_card, null);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -286,17 +284,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        layout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    Toast.makeText(getApplicationContext(), object.getString("title") + i, Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
 
         params.setMargins((int) density * 8, (int) density * 8, (int) density * 8, (int) density * 8);
         layout.setLayoutParams(params);
@@ -326,6 +313,7 @@ public class MainActivity extends AppCompatActivity {
         int pos = track;
         for (int i = 0; i < allCards.size(); i++) {
             if (i == pos) {
+                ScrollView allTracks_scroll = findViewById(R.id.tracks_scroll);
                 allCards.get(i).setCardBackgroundColor(getResources().getColor(R.color.colorAccent));
                 allTracks_scroll.smoothScrollTo(0, ((View) allCards.get(i).getParent()).getTop());
             } else {
@@ -353,7 +341,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setSource(int i) {
-        seekbar.setProgress(0);
         player.reset();
         try {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
@@ -373,6 +360,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void setAudioProgress() {
+        seekbar.setProgress(0);
+        f_seekbar.setProgress(0);
         seekbar.setMax(player.getDuration());
         f_seekbar.setMax(player.getDuration());
         final Handler handler = new Handler();
@@ -408,9 +397,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             if (pos != now_playing) {
                 player.stop();
-                play_pause.setImageResource(R.drawable.play);
-                f_play_pause.setImageResource(R.drawable.play);
-                player.reset();
                 now_playing = pos;
                 setSource(pos);
                 player.start();

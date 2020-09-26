@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/linearLayout2"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -37,6 +36,7 @@
         android:id="@+id/full_details"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
         android:gravity="center_horizontal"
         android:textAlignment="center"
         android:textColor="@android:color/white"
@@ -46,13 +46,13 @@
         app:layout_constraintStart_toStartOf="parent" />
 
 
-    <ImageButton
+    <ImageView
         android:id="@+id/full_play_pause"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_margin="8dp"
-        android:scaleType="fitXY"
         android:background="@null"
+        android:scaleType="fitXY"
         app:layout_constraintBottom_toTopOf="@+id/linearLayout3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -89,6 +89,16 @@
             android:layout_height="wrap_content"
             android:textColor="@android:color/white" />
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/shuffle_view"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:adjustViewBounds="true"
+        android:padding="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/full_artwork"
+        app:srcCompat="@drawable/shuffle" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -81,37 +81,13 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="horizontal">
-
-            <ImageButton
-                android:id="@+id/play_prev"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@null"
-                android:padding="4dp"
-                app:srcCompat="@drawable/prev" />
-
-            <ImageButton
-                android:id="@+id/play_pause"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@null"
-                android:padding="4dp"
-                app:srcCompat="@drawable/play" />
-
-            <ImageButton
-                android:id="@+id/play_next"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:background="@null"
-                android:padding="4dp"
-                app:srcCompat="@drawable/next" />
-        </LinearLayout>
+        <ImageView
+            android:id="@+id/play_pause"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@null"
+            android:padding="4dp"
+            app:srcCompat="@drawable/play" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
