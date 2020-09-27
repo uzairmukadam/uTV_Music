@@ -451,6 +451,7 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint({"DefaultLocale", "SetTextI18n"})
     private void setNowPlaying(int pos) {
         try {
+            sendNotification(pos);
             curr_title.setText(allMusic.get(pos).getString("title"));
             full_title.setText(allMusic.get(pos).getString("title"));
             curr_artist.setText(allMusic.get(pos).getString("artist"));
@@ -464,6 +465,18 @@ public class MainActivity extends AppCompatActivity {
                     placeholder(R.drawable.art_placeholder).into(curr_artwork);
             Glide.with(getApplicationContext()).load(getMetadata(allMusic.get(pos).getString("source")).getEmbeddedPicture()).error(R.drawable.art_placeholder).into(full_artwork);
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendNotification(int pos) {
+        try {
+            Intent intent = new Intent();
+            intent.setAction("utv.uzitech.home_noti");
+            String[] data = new String[]{"Now Playing", allMusic.get(pos).getString("title"), "2000"};
+            intent.putExtra("notification", data);
+            sendBroadcast(intent);
+        }catch (Exception e){
             e.printStackTrace();
         }
     }
