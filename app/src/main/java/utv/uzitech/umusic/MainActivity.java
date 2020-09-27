@@ -9,10 +9,13 @@ import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
+import android.transition.AutoTransition;
+import android.transition.TransitionManager;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -26,7 +29,6 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
-import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -128,6 +130,7 @@ public class MainActivity extends AppCompatActivity {
                             if (track > allMusic.size() - 1) {
                                 track = track % 4;
                             }
+                            highlightCard();
                         }
                         break;
                     case "D_UP":
@@ -136,6 +139,7 @@ public class MainActivity extends AppCompatActivity {
                             if (track < 0) {
                                 track = allMusic.size() - 1;
                             }
+                            highlightCard();
                         }else {
                             shuffle = !shuffle;
                             setShuffleView();
@@ -148,6 +152,7 @@ public class MainActivity extends AppCompatActivity {
                             } else {
                                 track = 0;
                             }
+                            highlightCard();
                         } else {
                             int seek = player.getCurrentPosition() + 10000;
                             player.seekTo(Math.min(seek, player.getDuration()));
@@ -160,6 +165,7 @@ public class MainActivity extends AppCompatActivity {
                             } else {
                                 track = allMusic.size() - 1;
                             }
+                            highlightCard();
                         } else {
                             int seek = player.getCurrentPosition() - 10000;
                             player.seekTo(Math.max(seek, 0));
@@ -172,7 +178,6 @@ public class MainActivity extends AppCompatActivity {
                         break;
                 }
                 Log.d(TAG, String.valueOf(track));
-                highlightCard();
             }
         };
 
@@ -183,13 +188,20 @@ public class MainActivity extends AppCompatActivity {
                 assert input != null;
                 switch (input) {
                     case "BTN_PLAY":
-                        Play(now_playing);
+                        if(now_playing >= 0){
+                            Play(now_playing);
+                        } else {
+                            Play(track);
+                        }
+                        cleanHiglight();
                         break;
                     case "BTN_PREV":
                         Prev();
+                        cleanHiglight();
                         break;
                     case "BTN_NEXT":
                         Next();
+                        cleanHiglight();
                         break;
                 }
             }
@@ -203,7 +215,6 @@ public class MainActivity extends AppCompatActivity {
         if(shuffle){
             shuffle_toggle.setBackgroundResource(R.drawable.shuffle_toggle);
         } else {
-
             shuffle_toggle.setBackgroundResource(0);
         }
     }
@@ -280,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
             title.setText(object.getString("title"));
             Glide.with(getApplicationContext()).load(getMetadata(object.getString("source")).getEmbeddedPicture()).
                     apply(new RequestOptions().override(500, 500)).
-                    placeholder(ContextCompat.getDrawable(getApplicationContext(), R.drawable.art_placeholder)).into(art);
+                    error(R.drawable.art_placeholder).into(art);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -329,15 +340,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void activateFullscreen() {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
+            TransitionManager.beginDelayedTransition(fullScreen, new AutoTransition());
+        }
         findViewById(R.id.now_playing_panel).setVisibility(View.GONE);
         findViewById(R.id.all_tracks_panel).setVisibility(View.GONE);
         fullScreen.setVisibility(View.VISIBLE);
     }
 
     void deactivateFullscreen() {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
+            TransitionManager.beginDelayedTransition(fullScreen, new AutoTransition());
+        }
         fullScreen.setVisibility(View.GONE);
         findViewById(R.id.now_playing_panel).setVisibility(View.VISIBLE);
         findViewById(R.id.all_tracks_panel).setVisibility(View.VISIBLE);
+        highlightCard();
     }
 
     private void setSource(int i) {
@@ -411,23 +429,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void Next() {
-        if (now_playing != allMusic.size() - 1) {
-            Play(now_playing + 1);
+        if(!shuffle){
+            if (now_playing != allMusic.size() - 1) {
+                Play(now_playing + 1);
+            } else {
+                Play(0);
+            }
         } else {
-            //if loop
-            Play(0);
+            Play(new Random().nextInt(allMusic.size()));
         }
-        cleanHiglight();
     }
 
     private void Prev() {
         if (now_playing != 0) {
             Play(now_playing - 1);
         } else {
-            //if loop
             Play(allMusic.size() - 1);
         }
-        cleanHiglight();
     }
 
     @SuppressLint({"DefaultLocale", "SetTextI18n"})
@@ -442,10 +460,9 @@ public class MainActivity extends AppCompatActivity {
             int mins = (player.getDuration() / 1000) / 60;
             int secs = (player.getDuration() / 1000) % 60;
             full_duration.setText(String.format("%02d", mins) + ":" + String.format("%02d", secs));
-            Glide.with(getApplicationContext()).load(getMetadata(allMusic.get(pos).getString("source")).getEmbeddedPicture()).
-                    placeholder(ContextCompat.getDrawable(getApplicationContext(), R.drawable.art_placeholder)).into(curr_artwork);
-            Glide.with(getApplicationContext()).load(getMetadata(allMusic.get(pos).getString("source")).getEmbeddedPicture()).
-                    placeholder(ContextCompat.getDrawable(getApplicationContext(), R.drawable.art_placeholder)).into(full_artwork);
+            Glide.with(getApplicationContext()).load(getMetadata(allMusic.get(pos).getString("source")).getEmbeddedPicture()).error(R.drawable.art_placeholder).
+                    placeholder(R.drawable.art_placeholder).into(curr_artwork);
+            Glide.with(getApplicationContext()).load(getMetadata(allMusic.get(pos).getString("source")).getEmbeddedPicture()).error(R.drawable.art_placeholder).into(full_artwork);
         } catch (Exception e) {
             e.printStackTrace();
         }

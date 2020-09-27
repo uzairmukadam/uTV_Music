@@ -10,53 +10,59 @@
 
     <ImageView
         android:id="@+id/full_artwork"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_margin="8dp"
+        android:layout_width="256dp"
+        android:layout_height="256dp"
         android:adjustViewBounds="true"
-        app:layout_constraintBottom_toTopOf="@+id/full_title"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:padding="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/linearLayout3"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:contentDescription="@string/music_artwork_desc" />
 
-    <TextView
-        android:id="@+id/full_title"
+
+    <LinearLayout
+        android:id="@+id/linearLayout4"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toTopOf="@+id/full_details"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="@+id/full_artwork"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toEndOf="@+id/full_artwork"
+        app:layout_constraintTop_toTopOf="@+id/full_artwork">
 
-    <TextView
-        android:id="@+id/full_details"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:gravity="center_horizontal"
-        android:textAlignment="center"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toTopOf="@+id/full_play_pause"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        <TextView
+            android:id="@+id/full_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
+        <TextView
+            android:id="@+id/full_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_horizontal"
+            android:textAlignment="center"
+            android:textColor="@android:color/white"
+            android:textSize="18sp" />
+    </LinearLayout>
 
     <ImageView
         android:id="@+id/full_play_pause"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:layout_margin="8dp"
+        android:layout_marginTop="8dp"
         android:background="@null"
         android:scaleType="fitXY"
-        app:layout_constraintBottom_toTopOf="@+id/linearLayout3"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="@drawable/play" />
+        app:layout_constraintEnd_toEndOf="@+id/linearLayout4"
+        app:layout_constraintStart_toEndOf="@+id/full_artwork"
+        app:layout_constraintTop_toBottomOf="@+id/linearLayout4"
+        app:srcCompat="@drawable/play"
+        android:contentDescription="@string/play_pause_btn_desc" />
 
 
     <LinearLayout
@@ -97,8 +103,9 @@
         android:adjustViewBounds="true"
         android:padding="8dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/full_artwork"
-        app:srcCompat="@drawable/shuffle" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/shuffle"
+        android:contentDescription="@string/shuffle_btn_desc" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

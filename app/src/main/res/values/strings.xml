@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Music</string>
+    <string name="now_playing_title">Now Playing</string>
+    <string name="music_artwork_desc">music artwork</string>
+    <string name="play_pause_btn_desc">play pause btn</string>
+    <string name="shuffle_btn_desc">shuffle btn</string>
 </resources>

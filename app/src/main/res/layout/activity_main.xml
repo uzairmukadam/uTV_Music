@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity"
-    android:orientation="horizontal">
+    android:background="@color/darkBackground"
+    android:orientation="horizontal"
+    tools:context=".MainActivity">
 
     <include
         android:id="@+id/now_playing_panel"
@@ -13,44 +13,19 @@
         android:layout_width="164dp"
         android:layout_height="match_parent" />
 
-    <LinearLayout
+    <include
         android:id="@+id/all_tracks_panel"
+        layout="@layout/tracks_tab_fragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <TextView
-            android:layout_gravity="center_horizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/tab_selected"
-            android:textColor="@android:color/white"
-            android:layout_margin="8dp"
-            android:padding="8dp"
-            android:text="Tracks"
-            android:textStyle="bold" />
-
-        <FrameLayout
-            android:id="@+id/tracks_fragment"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="visible">
-
-            <include layout="@layout/tracks_tab_fragment" />
-        </FrameLayout>
-
-    </LinearLayout>
+        android:layout_height="match_parent" />
 
     <FrameLayout
         android:id="@+id/full_screen_playback"
         android:layout_width="match_parent"
-        android:visibility="gone"
-        android:layout_height="match_parent">
-            <include layout="@layout/now_playing_full"/>
+        android:layout_height="match_parent"
+        android:visibility="gone">
+
+        <include layout="@layout/now_playing_full" />
     </FrameLayout>
 
 </LinearLayout>
