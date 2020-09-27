@@ -51,19 +51,6 @@
             android:textSize="18sp" />
     </LinearLayout>
 
-    <ImageView
-        android:id="@+id/full_play_pause"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginTop="8dp"
-        android:background="@null"
-        android:scaleType="fitXY"
-        app:layout_constraintEnd_toEndOf="@+id/linearLayout4"
-        app:layout_constraintStart_toEndOf="@+id/full_artwork"
-        app:layout_constraintTop_toBottomOf="@+id/linearLayout4"
-        app:srcCompat="@drawable/play"
-        android:contentDescription="@string/play_pause_btn_desc" />
-
 
     <LinearLayout
         android:id="@+id/linearLayout3"
@@ -94,6 +81,15 @@
             android:layout_width="50dp"
             android:layout_height="wrap_content"
             android:textColor="@android:color/white" />
+
+        <ImageView
+            android:id="@+id/full_play_pause"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:background="@null"
+            android:contentDescription="@string/play_pause_btn_desc"
+            app:srcCompat="@drawable/play" />
     </LinearLayout>
 
     <ImageView
