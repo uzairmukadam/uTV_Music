@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.media.AudioManager;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -17,14 +18,17 @@ import android.provider.MediaStore;
 import android.transition.AutoTransition;
 import android.transition.TransitionManager;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
@@ -51,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
 
     ImageView curr_artwork, full_artwork, play_pause, f_play_pause, shuffle_toggle;
     TextView curr_title, curr_artist, curr_album, full_title, full_details, full_curr, full_duration;
-    SeekBar seekbar, f_seekbar;
+    SeekBar seekbar, full_seekbar;
     Handler handler;
 
     BroadcastReceiver receiver, mediaplayback;
@@ -60,7 +64,9 @@ public class MainActivity extends AppCompatActivity {
 
     int track = 0, now_playing = -1;
 
-    boolean shuffle = false;
+    boolean shuffle = false, backpressed = false;
+
+    Toast customToast;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
         full_details = findViewById(R.id.full_details);
         full_curr = findViewById(R.id.full_curr_time);
         full_duration = findViewById(R.id.full_duration);
-        f_seekbar = findViewById(R.id.full_seekbar);
+        full_seekbar = findViewById(R.id.full_seekbar);
         shuffle_toggle = findViewById(R.id.shuffle_view);
 
         getAllFiles();
@@ -139,9 +145,9 @@ public class MainActivity extends AppCompatActivity {
                         if (fullScreen.getVisibility() == View.GONE) {
                             track += 4;
                             if (track > allMusic.size() - 1) {
-                                if(track < tracks_tab[0]*4){
+                                if (track < tracks_tab[0] * 4) {
                                     track = allMusic.size() - 1;
-                                }else {
+                                } else {
                                     track = 0;
                                 }
                             }
@@ -190,7 +196,6 @@ public class MainActivity extends AppCompatActivity {
                         allCards.get(track).performClick();
                         break;
                 }
-                Log.d(TAG, String.valueOf(track));
             }
         };
 
@@ -220,6 +225,14 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
+        AudioManager audioManager = (AudioManager) getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+        AudioManager.OnAudioFocusChangeListener onAudioFocusChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+            @Override
+            public void onAudioFocusChange(int focusChange) {
+            }
+        };
+        audioManager.requestAudioFocus(onAudioFocusChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+
         registerReceiver(receiver, new IntentFilter("utv.uzitech.remote_input"));
         registerReceiver(mediaplayback, new IntentFilter("utv.uzitech.remote_input"));
     }
@@ -237,6 +250,7 @@ public class MainActivity extends AppCompatActivity {
         allCards = new ArrayList<>();
         float density = getResources().getDisplayMetrics().density;
         LinearLayout allTracks_list = findViewById(R.id.tracks_parent);
+        initiateCustomExit(density);
         Log.d(TAG, "List_Start");
         int i = 0;
         boolean end = false;
@@ -397,9 +411,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void setAudioProgress() {
         seekbar.setProgress(0);
-        f_seekbar.setProgress(0);
+        full_seekbar.setProgress(0);
         seekbar.setMax(player.getDuration());
-        f_seekbar.setMax(player.getDuration());
+        full_seekbar.setMax(player.getDuration());
         handler = new Handler();
 
         Runnable runnable = new Runnable() {
@@ -411,7 +425,7 @@ public class MainActivity extends AppCompatActivity {
                     int secs = (player.getCurrentPosition() / 1000) % 60;
                     full_curr.setText(String.format("%02d", mins) + ":" + String.format("%02d", secs));
                     seekbar.setProgress(player.getCurrentPosition());
-                    f_seekbar.setProgress(player.getCurrentPosition());
+                    full_seekbar.setProgress(player.getCurrentPosition());
                     handler.postDelayed(this, 1000);
                 } catch (IllegalStateException ed) {
                     ed.printStackTrace();
@@ -469,7 +483,6 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint({"DefaultLocale", "SetTextI18n"})
     private void setNowPlaying(int pos) {
         try {
-            sendNotification(pos);
             curr_title.setText(allMusic.get(pos).getString("title"));
             full_title.setText(allMusic.get(pos).getString("title"));
             curr_artist.setText(allMusic.get(pos).getString("artist"));
@@ -479,24 +492,37 @@ public class MainActivity extends AppCompatActivity {
             int mins = (player.getDuration() / 1000) / 60;
             int secs = (player.getDuration() / 1000) % 60;
             full_duration.setText(String.format("%02d", mins) + ":" + String.format("%02d", secs));
-            Glide.with(getApplicationContext()).load(getMetadata(allMusic.get(pos).getString("source")).getEmbeddedPicture()).error(R.drawable.art_placeholder).
+            Glide.with(getApplicationContext()).load(getMetadata(allMusic.get(pos).getString("source")).
+                    getEmbeddedPicture()).error(R.drawable.art_placeholder).
                     placeholder(R.drawable.art_placeholder).into(curr_artwork);
-            Glide.with(getApplicationContext()).load(getMetadata(allMusic.get(pos).getString("source")).getEmbeddedPicture()).error(R.drawable.art_placeholder).into(full_artwork);
+            Glide.with(getApplicationContext()).load(getMetadata(allMusic.get(pos).getString("source")).
+                    getEmbeddedPicture()).error(R.drawable.art_placeholder).
+                    into(full_artwork);
+            dashboardNoti(allMusic.get(pos).getString("title"));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void sendNotification(int pos) {
-        try {
-            Intent intent = new Intent();
-            intent.setAction("utv.uzitech.home_noti");
-            String[] data = new String[]{"Now Playing", allMusic.get(pos).getString("title"), "2000"};
-            intent.putExtra("notification", data);
-            sendBroadcast(intent);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    private void dashboardNoti(String song) {
+        Intent intent = new Intent();
+        intent.setAction("utv.uzitech.home_noti");
+        String[] data = new String[]{"Now Playing", song, "2000"};
+        intent.putExtra("notification", data);
+        sendBroadcast(intent);
+    }
+
+    private void initiateCustomExit(float density) {
+        LayoutInflater inflater = getLayoutInflater();
+        View layout = inflater.inflate(R.layout.custom_toast,
+                (ViewGroup) findViewById(R.id.toast_root));
+
+        TextView msg = (TextView) layout.findViewById(R.id.toast_text);
+        msg.setText(R.string.exit_warning);
+        customToast = new Toast(getApplicationContext());
+        customToast.setGravity(Gravity.BOTTOM | Gravity.END, (int) (density * 8), (int) (density * 8));
+        customToast.setDuration(Toast.LENGTH_LONG);
+        customToast.setView(layout);
     }
 
     @Override
@@ -514,8 +540,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         if (fullScreen.getVisibility() == View.GONE) {
-            player.release();
-            super.onBackPressed();
+            if (backpressed) {
+                player.release();
+                customToast.cancel();
+                super.onBackPressed();
+            }
+            backpressed = true;
+            customToast.show();
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    backpressed = false;
+                }
+            }, 3500);
         } else {
             deactivateFullscreen();
         }

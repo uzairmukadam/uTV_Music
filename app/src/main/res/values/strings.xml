@@ -4,4 +4,5 @@
     <string name="music_artwork_desc">music artwork</string>
     <string name="play_pause_btn_desc">play pause btn</string>
     <string name="shuffle_btn_desc">shuffle btn</string>
+    <string name="exit_warning">Press back again to exit or home to minimize</string>
 </resources>
