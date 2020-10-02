@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
     FrameLayout fullScreen;
 
-    ImageView curr_artwork, full_artwork, play_pause, f_play_pause, shuffle_toggle;
+    ImageView curr_artwork, full_artwork, play_pause, play_next, play_prev, f_play_pause, shuffle_toggle;
     TextView curr_title, curr_artist, curr_album, full_title, full_details, full_curr, full_duration;
     SeekBar seekbar, full_seekbar;
     Handler handler;
@@ -76,6 +76,8 @@ public class MainActivity extends AppCompatActivity {
         fullScreen = findViewById(R.id.full_screen_playback);
 
         play_pause = findViewById(R.id.play_pause);
+        play_prev = findViewById(R.id.play_prev);
+        play_next = findViewById(R.id.play_next);
         curr_artwork = findViewById(R.id.curr_artwork);
         curr_title = findViewById(R.id.curr_title);
         curr_artist = findViewById(R.id.curr_artist);
@@ -103,6 +105,31 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 activateFullscreen();
+            }
+        });
+
+        play_pause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (now_playing >= 0) {
+                    Play(now_playing);
+                }
+            }
+        });
+
+        play_prev.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Prev();
+                cleanHiglight();
+            }
+        });
+
+        play_next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Next();
+                cleanHiglight();
             }
         });
 
@@ -517,7 +544,7 @@ public class MainActivity extends AppCompatActivity {
         View layout = inflater.inflate(R.layout.custom_toast,
                 (ViewGroup) findViewById(R.id.toast_root));
 
-        TextView msg = (TextView) layout.findViewById(R.id.toast_text);
+        TextView msg = layout.findViewById(R.id.toast_text);
         msg.setText(R.string.exit_warning);
         customToast = new Toast(getApplicationContext());
         customToast.setGravity(Gravity.BOTTOM | Gravity.END, (int) (density * 8), (int) (density * 8));
