@@ -533,9 +533,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void dashboardNoti(String song) {
         Intent intent = new Intent();
-        intent.setAction("utv.uzitech.home_noti");
-        String[] data = new String[]{"Now Playing", song, "2000"};
-        intent.putExtra("notification", data);
+        intent.setAction("utv.uzitech.dash_notif");
+        String[] data = new String[]{"Now Playing", song, "music_notif"};
+        intent.putExtra("Notification", data);
         sendBroadcast(intent);
     }
 
