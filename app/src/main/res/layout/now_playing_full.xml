@@ -14,14 +14,14 @@
         android:layout_height="256dp"
         android:adjustViewBounds="true"
         android:padding="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/linearLayout3"
+        app:layout_constraintBottom_toTopOf="@+id/track_playback"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:contentDescription="@string/music_artwork_desc" />
 
 
     <LinearLayout
-        android:id="@+id/linearLayout4"
+        android:id="@+id/track_details"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -53,7 +53,7 @@
 
 
     <LinearLayout
-        android:id="@+id/linearLayout3"
+        android:id="@+id/track_playback"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
